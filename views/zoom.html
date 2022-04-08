@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>ShareMoney | Hóa đơn</title>
+     <link rel="stylesheet" href="/css_index_file">
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+     <style>
+          .content{
+               display: block;
+          }
+          .bill{
+               width: 100%;
+               margin-top: 20px;
+               position: relative;
+          }
+          .btnarea{
+               top: 10px;
+               right: 10px;
+               width: fit-content;
+          }
+          table{
+               width: 100% !important;
+               border-collapse: collapse;
+               margin-top: 10px;
+          }
+          td{
+               padding: 5px 0px;
+          }
+          .form{
+               margin: 0 auto;
+          }
+     </style>
+</head>
+<body>
+     <div class="navigation">
+          <ul>
+               <li>
+                    <a id="linktt">Tiền nhà</a>
+               </li>
+               <li>
+                    <a id="linksd">Số điện</a>
+               </li>
+               <li class="active">
+                    <a>Thống kê</a>
+               </li>
+          </ul>
+     </div>
+     <div class="content">
+          <div class="form">
+               <input type="text" id="btitle" class="inp" placeholder="Tiêu đề">
+               <input type="number" id="bquan" class="inp" placeholder="Số lượng">
+               <input type="number" id="bprice" class="inp" placeholder="Giá">
+               <select class="inp" id="bperson">
+                    <option selected value=0>Chung</option>
+                    <option value=1>Riêng (Khanh)</option>
+                    <option value=2>Riêng (Cường)</option>
+               </select>
+               <div class="btn btn-solve">Lưu</div>
+               <div class="btn btn-edit" style="display:none">Sửa</div>
+          </div>
+          <div class="bill">
+               <h3></h3>
+               <table class="tbl" border="1">
+               </table>
+               <div class="btnarea">
+                    <div class="btn btn-save">Thanh toán toàn bộ</div>
+               </div>
+          </div>
+     </div>
+     <script>
+          let edit_id = -1;
+          $.ajax({
+               method: 'GET',
+               url: '/tk-hoa-don'
+          }).done((data)=>{
+               let datas = data.data;
+               html = ``;
+               let k = 0,c = 0,sum = 0;
+               for(let i = 0; i < datas.length; i++){
+                    if(datas[i].status == 0) {
+                         switch(datas[i].person){
+                              case 0: {sum+=datas[i].price; break;}
+                              case 1: {k+=datas[i].price; break;}
+                              case 2: {c+=datas[i].price; break;}
+                              default: break;
+                         }
+                    }
+                    $('.bill h3').html(`Khanh: ${k+sum/2}đ - Cường: ${c + sum/2}đ - Tổng: ${k + c+ sum}đ`);
+                    html+=`
+                    <tr id="ed${datas[i].id}">
+                         <td>${datas[i].title}</td>
+                         <td>x${datas[i].quantity != null ? datas[i].quantity : '??'}</td>
+                         <td>${datas[i].price}</td>
+                         <td>${datas[i].person == 0 ? 'Chung' : datas[i].person == 1 ? 'Khanh' : 'Cường'}</td>
+                         <td>
+                              ${datas[i].status == 0 ? '<p style="color:red">Chưa thanh toán</p>': '<p style="color:green">Đã thanh toán</p>'}
+                         </td>
+                         <td>
+                              <div class="btn edit" id="e${datas[i].id}">Sửa</div>
+                              ${datas[i].status == 0 ? '<div class="btn mkdone" id="b' + datas[i].id + '">Done</div>': '<div class="btn ndone" id="nb' + datas[i].id + '">Redo done</div>'}
+                         </td>
+                    </tr>
+                    `
+               }
+               $('.tbl').html(html);
+               $('.mkdone').click((event)=>{
+                    id = event.target.id.split('b')[1];
+                    $.ajax({
+                         method: 'POST',
+                         url: '/thanh-toan',
+                         data:{
+                              id
+                         }
+                    }).done(()=>window.location.reload());
+               })
+               $('.ndone').click((event)=>{
+                    id = event.target.id.split('b')[1];
+                    $.ajax({
+                         method: 'POST',
+                         url: '/huy-thanh-toan',
+                         data:{
+                              id
+                         }
+                    }).done(()=>window.location.reload());
+               })
+               $('.edit').click((event)=>{
+                    id = event.target.id.split('e')[1];
+                    let elm = $(`#ed${id}`);
+                    title = elm.children().eq(0).html();
+                    quantity = elm.children().eq(1).html().split('x')[1];
+                    price = elm.children().eq(2).html();
+                    person = elm.children().eq(3).html();
+                    person == 'Chung' ? person = 0 : person == 'Cường' ? person = 2: person = 1; 
+                    $('#btitle').val(title);
+                    $('#bquan').val(quantity);
+                    $('#bprice').val(price);
+                    $('#bperson').val(person);
+                    edit_id = id;
+                    $('.btn-edit').css("display","inline-block");
+                    $('.btn-solve').css("display","none")
+               })
+               $('.btn-edit').click((event)=>{
+                    let title = $('#btitle').val();
+                    let quantity = $('#bquan').val();
+                    let price = $('#bprice').val();
+                    let person = $('#bperson').val();
+                    $.ajax({
+                         method: 'POST',
+                         url: '/them-hoa-don',
+                         data: {
+                              bill: {
+                                   id:edit_id,title, quantity, price, person
+                              }
+                         }
+                    }).done((data)=>{
+                         window.location.reload();
+                    });
+               })
+          })
+
+          $('.btn-solve').click(()=>{
+               let title = $('#btitle').val();
+               let quantity = $('#bquan').val();
+               let price = $('#bprice').val();
+               let person = $('#bperson').val();
+               if(btitle == null || bprice == null){
+                    alert('Thieu thong tin');
+               }else{
+                    $.ajax({
+                         method: 'POST',
+                         url: '/them-hoa-don',
+                         data: {
+                              bill: {
+                                   id:null,title, quantity, price, person
+                              }
+                         }
+                    }).done((data)=>{
+                         window.location.reload();
+                    });
+               }
+          })
+          $('.btn-save').click(()=>{
+               $.ajax({
+                    method: 'POST',
+                    url: '/thanh-toan',
+                    data:{
+                         id: null
+                    }
+               }).done(()=>window.location.reload());
+          })
+          $('#linktt').click(()=>{
+               let token = $.cookie('__tk');
+               window.location.href = '/trang-chu/' + token;
+          })
+          $('#linksd').click(()=>{
+               let token = $.cookie('__tk');
+               window.location.href = '/so-dien/' + token;
+          })
+     </script>
+</body>
+</html>

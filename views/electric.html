@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>ShareMoney | Số điện</title>
+     <link rel="stylesheet" href="/css_index_file">
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+</head>
+<body>
+     <div class="navigation">
+          <ul>
+               <li>
+                    <a id="linktt">Tiền nhà</a>
+               </li>
+               <li class="active">
+                    <a>Số điện</a>
+               </li>
+               <li>
+                    <a id="linkst">Thống kê</a>
+               </li>
+          </ul>
+     </div>
+     <div class="content">
+          <div class="info">
+          </div>
+     </div>
+     <script>
+          $.ajax({
+               method: 'GET',
+               url: '/tk-so-dien'
+          }).done((data)=>{
+               let sd = data.data;
+               let html = '<h3>Thống kê số điện</h3>';
+               for(let i = 0; i < data.data.length; i++){
+                    html+=`
+                    <div class="table">
+                         <div class="column">${data.data[i].month}</div>
+                         <div class="column">${data.data[i].val}</div>
+                    </div>
+                    `
+               }
+               $('.info').html(html);
+          })
+          $('#linktt').click(()=>{
+               let token = $.cookie('__tk');
+               window.location.href = '/trang-chu/' + token;
+          })
+          $('#linkst').click(()=>{
+               let token = $.cookie('__tk');
+               window.location.href = '/thong-ke/' + token;
+          })
+     </script>
+</body>
+</html>

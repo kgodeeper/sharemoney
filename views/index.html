@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>ShareMoney | Trang chủ | Tính tiền nhà</title>
+     <link rel="stylesheet" href="/css_index_file">
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+</head>
+<body>
+     <div class="navigation">
+          <ul>
+               <li class="active">
+                    <a>Tiền nhà</a>
+               </li>
+               <li>
+                    <a id="linksd">Số điện</a>
+               </li>
+               <li>
+                    <a id="linkst">Thống kê</a>
+               </li>
+          </ul>
+     </div>
+     <div class="content">
+          <div class="form">
+               <div>Tính tiền tháng nào ?</div>
+               <input type="month" class="inp" id="hmonth">
+               <input type="number" class="inp" id="nomonth" placeholder="Số tháng">
+               <input type="number" class="inp" id="prevel" placeholder="Số điện tháng trước" readonly>
+               <input type="number" class="inp" id="curel" placeholder="Số điện tháng này">
+               <input type="number" class="inp" id="wtpr" placeholder="Tiền nước">
+               <div class="btn btn-solve">Thực hiện</div>
+          </div>
+          <div class="bill">
+               <h3>Hóa đơn</h3><hr>
+               <table class="bill-inf">
+               </table>
+               <div class="btnarea">
+                    <div class="btn btn-save">Lưu số điện</div>
+               </div>
+          </div>
+     </div>
+     <script>
+          let sodien;
+          let sd;
+          $('#hmonth').change(()=>{
+               let month = $('#hmonth').val();
+               let temp = month.split('-');
+               if(temp[1] == 1){
+                    temp[1] = 12;
+                    temp[0] = temp[0]-1;
+               }else temp[1] = temp[1] -1;
+               month = temp[0] + "-" + (temp[1] < 10 ? '0' + temp[1] : temp[1]);
+               $.ajax({
+                    method: 'POST',
+                    url: '/st-so-dien',
+                    data:{
+                         month
+                    }
+               }).done((data,code)=>{
+                    if(data.data.length > 0){
+                         console.log(data.data);
+                         let val = data.data[0].val;
+                         $('#prevel').val(val);
+                    }else{
+                         alert('Error month value');
+                    }
+               }).fail(()=>{
+                    alert('Server error');
+               })
+          })
+          $('.btn-solve').click(()=>{
+               let month = $('#hmonth').val();
+               let nom = $('#nomonth').val();
+               let curel = $('#curel').val();
+               sd = curel;
+               let prvel = $('#prevel').val();
+               let wtpr = $('#wtpr').val();
+               if(month == '' || nom == '' || prevel == '' || curel == '' || wtpr == ''){
+                    alert('Vui lòng điền đủ trường');
+               }else{
+                    tiennha = nom * 1800000;
+                    sodien = curel - prvel;
+                    tiendien = sodien*4000;
+                    sum = (Number)(tiennha) + (Number)(tiendien) + (Number)(wtpr); 
+                    let html = `
+                    <tr>
+                         <td style="text-align: left">Tháng</td>
+                         <td style="text-align: center;"></td>
+                         <td style="text-align: right; font-weight: bolder;" id="mnth">${month}</td>
+                    </tr>
+                    <tr>
+                         <td style="text-align: left">Tiền nhà</td>
+                         <td style="text-align: center;">x${nom}</td>
+                         <td style="text-align: right; font-weight: bolder;">${tiennha}</td>
+                    </tr>
+                    <tr>
+                         <td style="text-align: left">Điện</td>
+                         <td style="text-align: center;">${sodien}</td>
+                         <td style="text-align: right; font-weight: bolder;">${tiendien}</td>
+                    </tr>
+                    <tr>
+                         <td style="text-align: left">Nước</td>
+                         <td style="text-align: center;"></td>
+                         <td style="text-align: right; font-weight: bolder;">${wtpr}</td>
+                    </tr>
+                    <tr class="sum">
+                         <td style="text-align: left;border-top: 2px solid #000">Tổng</td>
+                         <td style="text-align: center;border-top: 2px solid #000"></td>
+                         <td style="text-align: right; font-weight: bolder;border-top: 2px solid #000">${sum}</td>
+                    </tr>
+                    <tr class="sum">
+                         <td style="text-align: left">Một người</td>
+                         <td style="text-align: center"></td>
+                         <td style="text-align: right; font-weight: bolder;">${sum/2}</td>
+                    </tr>
+                    `
+                    $('.bill-inf').html(html);
+               }
+          })
+          $('#linksd').click(()=>{
+               let token = $.cookie('__tk');
+               window.location.href = '/so-dien/' + token;
+          })
+          $('#linkst').click(()=>{
+               let token = $.cookie('__tk');
+               window.location.href = '/thong-ke/' + token;
+          })
+          $('.btn-save').click(()=>{
+               let thang = $("#mnth").html();
+               console.log(sd);
+               $.ajax({
+                    method: 'POST',
+                    url: '/luu-so-dien',
+                    data: {
+                        elect:{
+                             month: thang,
+                             number: sd
+                        }
+                    }
+               }).done((data)=>{
+                    alert({data});
+               })
+          })
+     </script>
+</body>
+</html>

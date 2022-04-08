@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <meta charset="UTF-8">
+     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>ShareMoney | Xác thực người dùng</title>
+     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+     <link rel="stylesheet" href="/css_auth_file">
+</head>
+<body>
+     <div class="container">
+          <div class="auth">
+               <h1>ShareMoney</h1>
+               <p>Để sử dụng dịch vụ, vui lòng nhập mật khẩu xác minh</p>
+               <input type="password" class="authinp"/>
+               <p class="error-message" style="font-size:12px; color: red; text-align: center; margin-bottom: 10px;"></p>
+               <div class="btn btn-done">Xác minh</div>
+          </div>
+     </div>
+     <script>
+          $('.btn-done').click(()=>{
+               $('.error-message').text("");
+               if($('.authinp').val() == ''){
+                    $('.error-message').text("Vui lòng nhập mật khẩu");
+               }else{
+                    $.ajax({
+                         url: '/authenticate',
+                         method: 'POST',
+                         data:{
+                              password: $('.authinp').val()
+                         }
+                    }).done((data,code)=>{
+                         if(data.token != ''){
+                              let cookie = `__tk=${data.token}`;
+                              document.cookie = cookie;
+                              $('.error-message').text("Thành công");  
+                              setTimeout(() => {
+                                   window.location.href = '/trang-chu/' + data.token;
+                              }, 1000);
+                         }else{
+                              $('.error-message').text("Mật khẩu không chính xác");  
+                         }
+                    }).fail((data,code)=>{
+                         console.log(data,code);
+                    })
+               }
+          })
+          $('.authinp').change(()=>{
+               if($('.authinp').val().trim() != ''){
+                    $('.error-message').text("");  
+               }
+          })
+     </script>
+</body>
+</html>
